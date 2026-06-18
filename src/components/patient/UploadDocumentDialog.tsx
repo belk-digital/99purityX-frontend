@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, Upload, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { documentsApi } from "@/lib/api/documents";
-import { useAuthStore } from "@/stores/auth.store";
+import { patientsApi } from "@/lib/api/patients";
 import type { DocumentType } from "@/types/document";
 
 interface UploadDocumentDialogProps {
@@ -41,7 +41,10 @@ function formatFileSize(bytes: number) {
 
 export function UploadDocumentDialog({ open, onOpenChange }: UploadDocumentDialogProps) {
   const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
+  const { data: patientProfile } = useQuery({
+    queryKey: ["patient", "me"],
+    queryFn: patientsApi.getMe,
+  });
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -84,7 +87,7 @@ export function UploadDocumentDialog({ open, onOpenChange }: UploadDocumentDialo
     formData.append("file", file);
     formData.append("title", title.trim());
     formData.append("document_type", docType);
-    formData.append("patient_id", user?.id ?? "");
+    formData.append("patient_id", patientProfile?.id ?? "");
     if (description.trim()) formData.append("description", description.trim());
 
     mutation.mutate(formData);
